@@ -32,6 +32,7 @@ import kotlin.properties.Delegates
 
 class MainActivity : AppCompatActivity() {
 
+    // Clase para manejar conexiones
     val connectionClass = ConnectionClass()
 
     var value = ""
@@ -50,31 +51,32 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Configura el binding con la vista
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         title = "Bluetooth Printer Example Kotlin"
     }
-
+    // Escanea dispositivos Bluetooth disponibles
     fun scanBt(view: View) {
-        checkPermission()
-        print_inv()
+        checkPermission()// Verifica los permisos de Bluetooth
+        print_inv()// Imprime datos de ejemplo
     }
 
+    // Imprime datos utilizando una conexión Bluetooth
     fun print(view: View) {
         if (btPermission) {
             print_inv()
         } else {
-            checkPermission()
+            checkPermission() // Solicita los permisos si no están otorgados
         }
-
-
     }
 
+    // Verifica y solicita permisos necesarios para Bluetooth
     fun checkPermission() {
         val bluetoothManager: BluetoothManager = getSystemService(BluetoothManager::class.java)
         val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
         if (bluetoothAdapter == null) {
-            //Device doesnt support Bluetooh
+            // El dispositivo no soporta Bluetooth
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 blueToothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
@@ -83,6 +85,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Solicita permiso para Bluetooth y configura la acción posterior
     private val blueToothPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -91,22 +94,26 @@ class MainActivity : AppCompatActivity() {
             val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
             btPermission = true
             if (bluetoothAdapter?.isEnabled == false) {
+                // Solicita al usuario habilitar Bluetooth
                 val enabledBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                 btActivityResultLauncher.launch(enabledBtIntent)
             } else {
-                btScan()
+                btScan() // Inicia el escaneo de dispositivos
             }
         }
     }
+
+    // Maneja el resultado de la solicitud de habilitación de Bluetooth
     private val btActivityResultLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult ->
         if (result.resultCode == RESULT_OK) {
-            btScan()
+            btScan() // Si el usuario habilita Bluetooth, inicia el escaneo
         }
     }
 
     @SuppressLint("MissingPermission")
+    // Escanea dispositivos Bluetooth emparejados y los muestra en un cuadro de diálogo
     private fun btScan() {
         val bluetoothManager: BluetoothManager = getSystemService(BluetoothManager::class.java)
         val bluetoohAdapter: BluetoothAdapter? = bluetoothManager.adapter
@@ -123,6 +130,7 @@ class MainActivity : AppCompatActivity() {
         var data: MutableList<Map<String?, Any?>?>? = null
         data = ArrayList()
         if (pairedDevices.isNotEmpty()) {
+            // Agrega los dispositivos emparejados a la lista
             val datanum1: MutableMap<String?, Any?> = HashMap()
             datanum1["A"] = ""
             datanum1["B"] = ""
@@ -133,6 +141,7 @@ class MainActivity : AppCompatActivity() {
                 datanum["B"] = device.address
                 data.add(datanum)
             }
+            // Configura el adaptador para mostrar los dispositivos en el ListView
             val fromwhere = arrayOf("A")
             val viewswhere = intArrayOf(R.id.item_name)
             ADhere =
@@ -144,18 +153,21 @@ class MainActivity : AppCompatActivity() {
                     val string = ADhere.getItem(position) as HashMap<String, String>
                     val prnName = string["A"]
                     //devicename no esta especificado
-                    binding.deviceName.setText(prnName)
+                    binding.deviceName.setText(prnName) // Muestra el nombre del dispositivo seleccionado
                     connectionClass.privater_name = prnName.toString()
                     dialog.dismiss()
                 }
         } else {
+            // Si no se encuentran dispositivos, muestra un mensaje
             val value = "No Devices found"
             Toast.makeText(this, value, Toast.LENGTH_LONG).show()
             return
         }
-        dialog.show()
+        dialog.show() // Muestra el diálogo
     }
 
+
+    // Inicia la escucha de datos entrantes desde el dispositivo Bluetooth
     fun beginListenForData() {
         try {
             val handler = Handler()
@@ -201,6 +213,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     @SuppressLint("MissingPermission")
+    // Inicializa la conexión con la impresora Bluetooth seleccionada
     fun InitPrinter() {
         var prname: String = ""
         prname = connectionClass.privater_name.toString()
@@ -248,126 +261,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //version Antigua
-    /*fun print_inv() {
-         try {
-             var str: String
-             var invhdr: String = "Retail Custom Solution"
-             var addr: String = "Deccon Tech"
-             var mo: String = ""
-             var gstin: String = ""
-             var billno: String = ""
-             var billdt: String = ""
-             var tblno: String = ""
-             var stw: String = ""
-             var msg: String = ""
-             var amtwd: String = ""
-
-             val wnm = "Self"
-             val logName = "Admin"
-             var amt = 0.0
-             var gst = 0.0
-             var gamt = 0.0
-             var cmpname: String = "Sunmi V2 PRO LA"
-             mo = "901624110"
-             gstin = "Gst no"
-             billno = "1001"
-             billdt = "RUC: 205158484"
-             tblno = "5"
-
-             msg = "Gracias por su compra"
-             amtwd = "Son ciento y cinco con 00 / 100 SOLES"
-             amt = 100.00
-             gst = 5.0
-             gamt = 105.00
-             val textData = StringBuilder()
-             val textData1 = StringBuilder()
-             val textData2 = StringBuilder()
-             val textData3 = StringBuilder()
-             val textData4 = StringBuilder()
-             if (invhdr.isNotEmpty()) {
-                 textData.append("""$invhdr"""".trimIndent())
-             }
-             textData.append(
-                 """"$cmpname"""".trimIndent()
-             )
-             if (mo.isNotEmpty()) {
-                 textData.append("""$mo""")
-             }
-             if (gstin.isNotEmpty()) {
-                 textData.append("""$gstin""".trimIndent())
-             }
-             str = ""
-             str = String.format("%-14s %17s", "Inv#$billno", "Table#:$tblno")
-
-             textData.append("""$str""".trimIndent())
-             textData.append("Date time: $billdt\n")
-
-             //method = "ALIGN_LEFT";
-             textData1.append("-----------------------------\n")
-             textData1.append(
-                 """
-                     Item Description
-                     """.trimIndent()
-             )
-             str = ""
-             str = String.format("%-11s %9s %10s", "Qty", "Rate", "Amount")
-             textData1.append(
-                 """
-                     $str
-                     """.trimIndent()
-             )
-             textData1.append("-------------------------------\n")
-             val df = DecimalFormat("0.00")
-             var itmname: String
-             var rt: String?
-             var qty: String
-             var amount: String?
-             for (i in 0 until 10) {
-                 val price = 10
-                 itmname = "Item $i"
-                 rt = df.format(price)
-                 qty = "1 pc"
-                 amount = "10.0"
-                 textData1.append(itmname + "\n")
-                 str = ""
-                 str = String.format("%-11s %9s %10s", qty, rt, amount)
-                 textData1.append(str + "\n")
-             }
-             textData1.append("---------------------------------\n")
-             str = ""
-
-             str = String.format("%-9s %-11s %10s", wnm, "Total:", amt)
-             textData1.append(str + "\n")
-             str = ""
-
-             str = String.format("%-9s %-11s %10s", logName, "Gst:", gst)
-             textData1.append(str + "\n")
-             str = ""
-             str = String.format("%-7s %8s", "Total:", gamt)
-             textData2.append(str + "\n")
-             textData3.append(amtwd + "\n")
-
-             if (msg.isNotEmpty()) {
-                 textData4.append(msg + "\n")
-             }
-             textData4.append("Android App\n\n\n\n")
-             IntentPrint(
-                 textData.toString(),
-                 textData1.toString(),
-                 textData2.toString(),
-                 textData3.toString(),
-                 textData4.toString()
-             )
 
 
-         } catch (ex: java.lang.Exception) {
-             value += "$ex\nExcep IntentPrint \n"
-             Toast.makeText(this, value, Toast.LENGTH_LONG).show()
-         }
-     }*/
-
-    //Refactorizado
+    // Prepara los datos para imprimir y los envía a la impresora
     fun print_inv() {
         try {
             val invhdr = "Retail Custom Solution S.A.C"
@@ -446,6 +342,13 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+      //Imprime un conjunto de datos en una impresora Bluetooth utilizando comandos específicos de impresión.
+      //txtValue Encabezado o título principal a imprimir.
+      //txtValue1 Detalle adicional a imprimir (por ejemplo, descripción o información de cliente).
+      //txtValue2 Texto en fuente grande (por ejemplo, total a pagar).
+      //txtValue3 Texto adicional en fuente normal (por ejemplo, detalles del recibo).
+      //txtValue4 Pie de página o texto centrado final (por ejemplo, mensaje de agradecimiento).
+
     fun IntentPrint(
         txtValue: String,
         txtValue1: String,
@@ -453,11 +356,16 @@ class MainActivity : AppCompatActivity() {
         txtValue3: String,
         txtValue4: String,
     ) {
+        // Verifica si hay un dispositivo seleccionado para la impresión
         if (connectionClass.privater_name.trim().isNotEmpty()) {
             val buffer = txtValue1.toByteArray()
             val PrintHeader = byteArrayOf(0xAA.toByte(), 0x55, 2, 0)
-            PrintHeader[3] = buffer.size.toByte()
+            PrintHeader[3] = buffer.size.toByte() // Ajusta el tamaño de la cabecera de impresión
+
+            // Inicializa la impresora antes de enviar datos
             InitPrinter()
+
+            // Verifica si el tamaño de la cabecera supera el límite permitido
             if (PrintHeader.size > 128) {
                 value += "\nValue is more than 128 size\n"
                 Toast.makeText(this, value, Toast.LENGTH_LONG).show()
@@ -465,35 +373,54 @@ class MainActivity : AppCompatActivity() {
                 try {
                     if (socket != null) {
                         try {
+                            // Comando para inicializar la impresora
                             val SP = byteArrayOf(0x1B, 0x40)
                             outputStream!!.write(SP)
-                            Thread.sleep(1000)
+                            Thread.sleep(1000) // Espera breve para garantizar la inicialización
                         } catch (e: InterruptedException) {
                             e.printStackTrace()
                         }
-                        val FONT_1X = byteArrayOf(0x1B, 0x21, 0x00)
+
+                        // Configura la fuente y alineación para el encabezado
+                        val FONT_1X = byteArrayOf(0x1B, 0x21, 0x00)// Fuente normal
                         outputStream!!.write(FONT_1X)
-                        val ALIGN_CENTER = byteArrayOf(0x1B, 0x61, 1)
+                        val ALIGN_CENTER = byteArrayOf(0x1B, 0x61, 1)// Alineación centrada
                         outputStream!!.write(ALIGN_CENTER)
-                        outputStream!!.write(txtValue.toByteArray())
-                        val ALIGN_LEFT = byteArrayOf(0x1B, 0x61, 0)
+                        outputStream!!.write(txtValue.toByteArray()) // Imprime el encabezado
+
+
+                        // Configura la fuente y alineación para el texto del detalle
+                        val ALIGN_LEFT = byteArrayOf(0x1B, 0x61, 0) // Alineación izquierda
                         outputStream!!.write(ALIGN_LEFT)
                         outputStream!!.write(txtValue1.toByteArray())
-                        val FONT_2X = byteArrayOf(0x1B, 0x21, 0x30)
+
+
+                        // Configura la fuente grande para el texto principal
+                        val FONT_2X = byteArrayOf(0x1B, 0x21, 0x30)// Fuente grande
                         outputStream!!.write(FONT_2X)
                         outputStream!!.write(txtValue2.toByteArray())
+
+
+                        // Imprime el texto adicional con fuente normal y alineación izquierda
                         outputStream!!.write(FONT_1X)
                         outputStream!!.write(ALIGN_LEFT)
                         outputStream!!.write(txtValue3.toByteArray())
+
+                        // Imprime el texto final centrado
                         outputStream!!.write(ALIGN_CENTER)
                         outputStream!!.write(txtValue4.toByteArray())
+
+                        // Comando para alimentar el papel y cortar
                         val FEED_PAPER_AND_CUT = byteArrayOf(0x1D, 0x56, 66, 0x00)
                         outputStream!!.write(FEED_PAPER_AND_CUT)
+
+                        // Limpia el flujo de salida y cierra la conexión
                         outputStream!!.flush()
                         outputStream!!.close()
                         socket!!.close()
                     }
                 } catch (ex: java.lang.Exception) {
+                    // Manejo de errores al imprimir
                     Toast.makeText(this, ex.message.toString(), Toast.LENGTH_LONG).show()
                 }
             }
